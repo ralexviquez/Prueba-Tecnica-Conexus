@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Conexus.API.Data;
 using Conexus.Common.Entities;
+using Microsoft.Data.SqlClient;
 
 namespace Conexus.API.Controllers
 {
@@ -25,14 +26,14 @@ namespace Conexus.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Producto>>> GetProductos()
         {
-            return await _context.Productos.ToListAsync();
+            return await _context.Productos.Include(p => p.categoria).ToListAsync();
         }
 
         // GET: api/Productoes/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Producto>> GetProducto(int id)
         {
-            var producto = await _context.Productos.FindAsync(id);
+            var producto = await _context.Productos.Where(p => p.Id == id).Include(p=> p.categoria).FirstOrDefaultAsync();
 
             if (producto == null)
             {
@@ -78,10 +79,38 @@ namespace Conexus.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Producto>> PostProducto(Producto producto)
         {
-            _context.Productos.Add(producto);
-            await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetProducto", new { id = producto.Id }, producto);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+
+                SqlParameter pam1 = new SqlParameter("@Nombre", producto.Nombre);
+                SqlParameter pam2 = new SqlParameter("@CategoriaId", producto.categoria.Id);
+
+                int retorno = await _context.Database.ExecuteSqlRawAsync("Ps_AddProducto @Nombre , @CategoriaId ", pam1, pam2);
+                producto.Id = retorno;
+
+                return CreatedAtAction("GetProducto", new { id = producto.Id }, producto);
+            }
+            catch (DbUpdateException dbUpdateException)
+            {
+                if (dbUpdateException.InnerException.Message.Contains("duplicate"))
+                {
+                    return NotFound("Ya existe este procedimiento.");
+                }
+                else
+                {
+                    return NotFound(dbUpdateException.InnerException.Message);
+                }
+            }
+            catch (Exception exception)
+            {
+                return NotFound(exception.Message);
+            }
         }
 
         // DELETE: api/Productoes/5
