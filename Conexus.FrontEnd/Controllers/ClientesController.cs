@@ -41,11 +41,6 @@ namespace Conexus.FrontEnd.Controllers
             return View(clientes);
         }
 
-        // GET: ClienteController/Details/5
-        public ActionResult Products(int id)
-        {
-            return View();
-        }
 
         // GET: ClienteController/Create
         public ActionResult Create()

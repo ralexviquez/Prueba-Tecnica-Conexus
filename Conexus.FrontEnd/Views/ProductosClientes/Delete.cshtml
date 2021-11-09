@@ -1,0 +1,27 @@
+﻿@model Conexus.Common.Entities.ProductosCliente
+
+@{
+    ViewData["Title"] = "Delete";
+}
+
+<h1>Eliminar</h1>
+
+<h3>¿Quieres eliminar este producto del cliente?</h3>
+<div>
+    <h4>Productos del Cliente</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.producto.Nombre)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.producto.Nombre)
+        </dd>
+    </dl>
+    
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="cliente.Id"/>
+        <input type="submit" value="Eliminar" class="btn btn-danger" /> |
+        <a asp-action="Index" asp-route-ClienteId="@Model.cliente.Id">Regresar</a>
+    </form>
+</div>

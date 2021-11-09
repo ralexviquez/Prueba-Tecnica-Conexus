@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Conexus.API.Data;
 using Conexus.Common.Entities;
+using Microsoft.Data.SqlClient;
 
 namespace Conexus.API.Controllers
 {
@@ -23,11 +24,29 @@ namespace Conexus.API.Controllers
 
 
         // GET: api/ProductosClientes/5
-        [HttpGet("{ClienteId}")]
+        [HttpGet("[action]/{ClienteId}")]
         public async Task<ActionResult<IEnumerable<ProductosCliente>>> GetProductosClientes(int ClienteId)
         {
             var productosCliente = await _context.ProductosClientes.Where(pc =>
-                                           pc.cliente.Id == ClienteId).ToListAsync();
+                                           pc.cliente.Id == ClienteId).Include(pc => pc.cliente).Include(pc => pc.producto).ToListAsync();
+
+            if (productosCliente == null)
+            {
+                return NotFound();
+            }
+
+            return productosCliente;
+        }
+
+        // GET: api/ProductosClientes/5
+        [HttpGet("[action]/{ClienteId}")]
+        public async Task<ActionResult<IEnumerable<Producto>>> GetProductosNoRegistrados(int ClienteId)
+        {
+            var productosCliente = await (from p in _context.Productos
+                                          join c in _context.ProductosClientes on p.Id equals c.producto.Id into productos
+                                          from pc in productos.DefaultIfEmpty()
+                                          where pc.cliente.Id != ClienteId
+                                          select p ).ToListAsync();
 
             if (productosCliente == null)
             {
@@ -41,7 +60,8 @@ namespace Conexus.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductosCliente>> GetProductosCliente(int id)
         {
-            var productosCliente = await _context.ProductosClientes.FindAsync(id);
+            var productosCliente = await _context.ProductosClientes.Where(pc =>
+                                           pc.Id == id).Include(pc => pc.cliente).Include(pc => pc.producto).FirstOrDefaultAsync();
 
             if (productosCliente == null)
             {
@@ -50,6 +70,7 @@ namespace Conexus.API.Controllers
 
             return productosCliente;
         }
+
 
         // PUT: api/ProductosClientes/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
@@ -61,7 +82,7 @@ namespace Conexus.API.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(productosCliente).State = EntityState.Modified;
+            _context.ProductosClientes.Update(productosCliente).State = EntityState.Modified;
 
             try
             {
@@ -87,10 +108,32 @@ namespace Conexus.API.Controllers
         [HttpPost]
         public async Task<ActionResult<ProductosCliente>> PostProductosCliente(ProductosCliente productosCliente)
         {
-            _context.ProductosClientes.Add(productosCliente);
-            await _context.SaveChangesAsync();
+            try
+            {
+                SqlParameter pam1 = new SqlParameter("@ClienteId", productosCliente.cliente.Id);
+                SqlParameter pam2 = new SqlParameter("@ProductoId", productosCliente.producto.Id);
 
-            return CreatedAtAction("GetProductosCliente", new { id = productosCliente.Id }, productosCliente);
+                int retorno = await _context.Database.ExecuteSqlRawAsync("Ps_AddProductosClientes @ClienteId, @ProductoId", pam1, pam2);
+                productosCliente.Id = retorno;
+
+
+                return CreatedAtAction("GetProductosCliente", new { id = productosCliente.Id }, productosCliente);
+            }
+            catch (DbUpdateException dbUpdateException)
+            {
+                if (dbUpdateException.InnerException.Message.Contains("duplicate"))
+                {
+                    return NotFound("Ya existe este procedimiento.");
+                }
+                else
+                {
+                    return NotFound(dbUpdateException.InnerException.Message);
+                }
+            }
+            catch (Exception exception)
+            {
+                return NotFound(exception.Message);
+            }
         }
 
         // DELETE: api/ProductosClientes/5

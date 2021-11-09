@@ -7,7 +7,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Conexus.Common", "Conexus.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Conexus.API", "Conexus.API\Conexus.API.csproj", "{E384B300-6284-450F-B322-59D776B454D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Conexus.FrontEnd", "Conexus.FrontEnd\Conexus.FrontEnd.csproj", "{9D677A11-A041-4A6B-9F68-0444248ECD7E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Conexus.FrontEnd", "Conexus.FrontEnd\Conexus.FrontEnd.csproj", "{9D677A11-A041-4A6B-9F68-0444248ECD7E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{AF96BEED-CF34-4774-A5D2-A44834C6C8C8}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\SPs.sql = Scripts\SPs.sql
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
